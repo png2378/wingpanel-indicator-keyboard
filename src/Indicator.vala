@@ -17,7 +17,7 @@
 
 public class Keyboard.Indicator : Wingpanel.Indicator {
     private Gtk.Grid main_grid;
-    private Keyboard.Widgets.KeyboardIcon display_icon;
+    private DisplayWidget display_widget;
     private Keyboard.Widgets.LayoutManager layouts;
 
     public Indicator () {
@@ -27,35 +27,19 @@ public class Keyboard.Indicator : Wingpanel.Indicator {
     }
 
     public override Gtk.Widget get_display_widget () {
-        if (display_icon == null) {
-            display_icon = new Keyboard.Widgets.KeyboardIcon ();
-            display_icon.button_press_event.connect ((e) => {
-                if (e.button == Gdk.BUTTON_MIDDLE) {
-                    layouts.next ();
-                    return Gdk.EVENT_STOP;
-                }
-                return Gdk.EVENT_PROPAGATE;
-            });
+        display_widget = new DisplayWidget ();
 
-            layouts = new Keyboard.Widgets.LayoutManager ();
-            layouts.updated.connect (() => {
-                display_icon.label = layouts.get_current (true);
-                var new_visibility = layouts.has_layouts ();
-                if (new_visibility != visible) {
-                    visible = new_visibility;
-                }
-            });
+        visible = true;
 
-            layouts.updated ();
-        }
-
-        return display_icon;
+        return display_widget;
     }
 
     public override Gtk.Widget? get_widget () {
         if (main_grid == null) {
             main_grid = new Gtk.Grid ();
             main_grid.set_orientation (Gtk.Orientation.VERTICAL);
+
+            layouts = new Keyboard.Widgets.LayoutManager ();
 
             var separator = new Wingpanel.Widgets.Separator ();
 
@@ -66,6 +50,20 @@ public class Keyboard.Indicator : Wingpanel.Indicator {
             var map_button = new Gtk.ModelButton ();
             map_button.text = _("Show keyboard layout");
             map_button.clicked.connect (show_keyboard_map);
+
+            layouts.updated.connect (() => {
+                if (layouts.get_current (true) == "ru") {
+                    display_widget.icon_name = "russian-symbolic";
+                } else {
+                    display_widget.icon_name = "english-symbolic";                
+                }
+                var new_visibility = layouts.has_layouts ();
+                if (new_visibility != visible) {
+                    visible = new_visibility;
+                }
+            });
+
+            layouts.updated ();
 
             main_grid.add (layouts);
             main_grid.add (separator);
